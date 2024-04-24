@@ -1,102 +1,171 @@
-import update from 'immutability-helper'
-import { memo, useCallback, useState } from 'react'
-import { NativeTypes } from 'react-dnd-html5-backend'
-import { Course } from './Course.js'
-import { MyComponent, Semester } from './Semester.js'
-import { ItemTypes } from './ItemTypes.js'
+import update from "immutability-helper";
+import { memo, useCallback, useState, useEffect } from "react";
+import { Course } from "./Course.js";
+import { Semester } from "./Semester.js";
+import { ItemTypes } from "./ItemTypes.js";
+
 export const Container = memo(function Container() {
   const [semesters, setSemesters] = useState([
-    { accepts: [ItemTypes.SM1, ItemTypes.SM2], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM2, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM3, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM4, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM5, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM6, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM7, ItemTypes.SM1], lastDroppedItem: null },
-    { accepts: [ItemTypes.SM8, ItemTypes.SM1], lastDroppedItem: null }
-  ])
-  const [courses] = useState([
-    { name: 'CS 1100', type: ItemTypes.SM1 },
-    { name: 'CS 1110', type: ItemTypes.SM1 },
-    { name: 'CS 2200', type: ItemTypes.SM1 },
-    { name: 'CS 2300', type: ItemTypes.SM1 },
-    { name: 'CS 2400', type: ItemTypes.SM2 },
-    { name: 'CS 3100', type: ItemTypes.SM2 },
-    { name: 'CS 3110', type: ItemTypes.SM2 },
-    { name: 'CS 3130', type: ItemTypes.SM2 },
-    { name: 'CS 3200', type: ItemTypes.SM3 },
-    { name: 'CS 3500', type: ItemTypes.SM3 },
-    { name: 'CS 3800', type: ItemTypes.SM3 },
-    { name: 'CS 4110', type: ItemTypes.SM3 },
-    { name: 'CS 4120', type: ItemTypes.SM4 },
-    { name: 'CS 4300', type: ItemTypes.SM4 },
-    { name: 'CS 4500', type: ItemTypes.SM4 },
-    { name: 'CS 4600', type: ItemTypes.SM4 },
-    { name: 'CS 4910', type: ItemTypes.SM5 },
-    { name: 'CS 4920', type: ItemTypes.SM5 },
-    { name: 'CS 4930', type: ItemTypes.SM5 },
-    { name: 'CS 3120', type: ItemTypes.SM5 },
-    { name: 'CS 3300', type: ItemTypes.SM6 },
-    { name: 'CS 3810', type: ItemTypes.SM6 },
-    { name: 'CS 4000', type: ItemTypes.SM6 },
-    { name: 'CS 4020', type: ItemTypes.SM6 },
-    { name: 'CS 4130', type: ItemTypes.SM7 },
-    { name: 'CS 4140', type: ItemTypes.SM7 },
-    { name: 'CS 4510', type: ItemTypes.SM7 },
-    { name: 'CS 4610', type: ItemTypes.SM7 },
-    { name: 'CS 4620', type: ItemTypes.SM8 },
-    { name: 'CS 4630', type: ItemTypes.SM8 },
-    { name: 'CS 4700', type: ItemTypes.SM8 },
-    { name: 'CS 4800', type: ItemTypes.SM8 }
-  ])
+    {
+      accepts: [ItemTypes.SM1, ItemTypes.SMOSF, ItemTypes.SMOF],
+      lastDroppedItem: null,
+      semesterId: 0,
+    },
+    {
+      accepts: [ItemTypes.SM2, ItemTypes.SMOSF, ItemTypes.SMOS],
+      lastDroppedItem: null,
+      semesterId: 1,
+    },
+    {
+      accepts: [ItemTypes.SM3, ItemTypes.SMOSF, ItemTypes.SMOF],
+      lastDroppedItem: null,
+      semesterId: 2,
+    },
+    {
+      accepts: [ItemTypes.SM4, ItemTypes.SMOSF, ItemTypes.SMOS],
+      lastDroppedItem: null,
+      semesterId: 3,
+    },
+    {
+      accepts: [ItemTypes.SM5, ItemTypes.SMOSF, ItemTypes.SMOF],
+      lastDroppedItem: null,
+      semesterId: 4,
+    },
+    {
+      accepts: [ItemTypes.SM6, ItemTypes.SMOSF, ItemTypes.SMOS],
+      lastDroppedItem: null,
+      semesterId: 5,
+    },
+    {
+      accepts: [ItemTypes.SM7, ItemTypes.SMOSF, ItemTypes.SMOF],
+      lastDroppedItem: null,
+      semesterId: 6,
+    },
+    {
+      accepts: [ItemTypes.SM8, ItemTypes.SMOSF, ItemTypes.SMOS],
+      lastDroppedItem: null,
+      semesterId: 7,
+    },
+  ]);
+  const [courses, setCourses] = useState([]);
 
-  const [droppedCourseNames, setDroppedCourseNames] = useState([])
-  function isDropped(courseName) {
-    return droppedCourseNames.indexOf(courseName) > 0
+  function refreshPage() {
+    window.location.reload(false);
   }
+
+  useEffect(() => {
+    loadCourses();
+  }, []);
+
+  const loadCourses = async () => {
+    const response = await fetch("http://localhost:8080/course/getAllCourse");
+    setCourses(await response.json());
+  };
+
+  const [droppedCourseNames, setDroppedCourseNames] = useState([]);
+
+  function isDropped(courseName) {
+    return droppedCourseNames.indexOf(courseName) > -1;
+  }
+
   const handleDrop = useCallback(
     (index, item) => {
-      const { name } = item
+      const { name } = item;
       setDroppedCourseNames(
-        update(droppedCourseNames, name ? { $push: [name] } : { $push: [] }),
-      )
+        update(droppedCourseNames, name ? { $push: [name] } : { $push: [] })
+      );
       setSemesters(
         update(semesters, {
           [index]: {
             lastDroppedItem: {
               $set: item,
             },
+            semesterId: {
+              $set: index,
+            },
           },
-        }),
-      )
+        })
+      );
+      setCourses((prevCourses) =>
+        prevCourses.filter((course) => course.courseCode !== item.name)
+      );
     },
-    [droppedCourseNames, semesters],
-  )
+    [droppedCourseNames, semesters]
+  );
+
   return (
     <div>
-      <div style={{ overflow: 'hidden', clear: 'both' }}>
-        {semesters.map(({ accepts, lastDroppedItem }, index) => (
-          <Semester
-            accept={accepts}
-            lastDroppedItem={lastDroppedItem}
-            onDrop={(item) => handleDrop(index, item)}
-            key={index}
-          />
-        ))}
-      </div>
-      <div style={{ overflow: 'hidden', clear: 'both' }}>
-      </div>
+      <form style={{ paddingTop: 20, paddingBottom: 20 }}>
+        <label>
+          Enter your 700 number:
+          <input type="text" />
+        </label>
+      </form>
 
-      <div style={{ overflow: 'hidden', clear: 'both' }}>
-        {courses.map(({ name, type }, index) => (
-          <Course
-            name={name}
-            type={type}
-            isDropped={isDropped(name)}
-            key={index}
-          />
-        ))}
+      <div style={{ overflow: "hidden", clear: "both" }}>
+        {semesters.map(({ accepts, lastDroppedItem, semesterId }, index) => {
+          const semesterCourses = courses.filter(
+            (course) => course.semestersOffered === semesterId
+          );
+          const semesterPrerequisites = semesterCourses.map(
+            (course) => course.prerequisites
+          );
+          return (
+            <Semester
+              accept={accepts}
+              lastDroppedItem={lastDroppedItem}
+              semesterId={semesterId}
+              prerequisites={semesterPrerequisites}
+              onDrop={(item) => handleDrop(index, item)}
+              key={index}
+            />
+          );
+        })}
       </div>
+      <div style={{ overflow: "hidden", clear: "both" }}></div>
+
+      <div style={{ overflow: "hidden", clear: "both" }}>
+        {courses.map(
+          ({ courseCode, prerequisites, semestersOffered }, index) => {
+            // Filter out courses whose prerequisites are not met
+            const canBeDropped =
+              prerequisites === "" ||
+              prerequisites
+                .split("AND")
+                .every((prerequisite) =>
+                  droppedCourseNames.includes(prerequisite.trim())
+                );
+            if (canBeDropped) {
+              return (
+                <Course
+                  name={courseCode}
+                  prerequisites={prerequisites}
+                  type={semestersOffered}
+                  isDropped={isDropped(courseCode)}
+                  key={index}
+                />
+              );
+            }
+            return null; // Skip rendering this course if prerequisites are not met
+          }
+        )}
+        {console.log("Courses", courses)}
+      </div>
+      <button
+        style={{
+          border: "3px solid #cf202e",
+          padding: "0.5rem 1rem",
+          marginRight: "1.5rem",
+          marginBottom: "1.5rem",
+          color: "White",
+          backgroundColor: "#cf202e",
+          borderRadius: "50px",
+        }}
+        onClick={refreshPage}
+      >
+        Submit Schedule
+      </button>
+      <br></br>
     </div>
-  )
-})
+  );
+});

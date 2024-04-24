@@ -1,33 +1,36 @@
-import { memo, useState, useRef, useEffect } from 'react';
-import { useDrop } from 'react-dnd';
-import { ItemTypes } from './ItemTypes.js';
+import { memo, useState, useEffect } from "react";
+import { useDrop } from "react-dnd";
 
 const style = {
-  height: '12rem',
-  width: '12rem',
-  border: '5px solid black',
-  marginRight: '1.5rem',
-  marginBottom: '1.5rem',
-  color: 'black',
-  padding: '1rem',
-  textAlign: 'center',
-  fontSize: '1rem',
-  lineHeight: 'normal',
-  float: 'left',
+  height: "10rem",
+  width: "15rem",
+  border: "5px solid black",
+  marginRight: "1.5rem",
+  marginBottom: "1.5rem",
+  color: "black",
+  padding: "1rem",
+  textAlign: "center",
+  fontSize: "1rem",
+  lineHeight: "normal",
+  float: "left",
 };
+
+// Global state to track usage of courses across all semesters
+const usedCourses = {};
 
 export const Semester = memo(function Semester({
   accept,
   lastDroppedItem,
+  semesterId,
   onDrop,
 }) {
-  const [array, setArray] = useState([]);
-  const [prevLastDroppedItem, setPrevLastDroppedItem] = useState(null); // Initialize prevLastDroppedItem
-  const addedRef = useRef(false); // Using ref to track if an item is added
+  const [addedCourses, setAddedCourses] = useState([]);
 
   const [{ isOver, canDrop }, drop] = useDrop({
     accept,
-    drop: onDrop,
+    drop: (item, monitor) => {
+      onDrop(item, monitor);
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
@@ -35,30 +38,31 @@ export const Semester = memo(function Semester({
   });
 
   const isActive = isOver && canDrop;
-  let backgroundColor = 'white';
+  let backgroundColor = "white";
   if (isActive) {
-    backgroundColor = 'darkgreen';
+    backgroundColor = "darkgreen";
   } else if (canDrop) {
-    backgroundColor = 'white';
+    backgroundColor = "white";
   }
 
   useEffect(() => {
-    if (lastDroppedItem && lastDroppedItem !== prevLastDroppedItem && !addedRef.current) {
-      setArray(prevArray => [...prevArray, lastDroppedItem.name]);
-      setPrevLastDroppedItem(lastDroppedItem);
-      addedRef.current = true;
-    } else {
-      addedRef.current = false;
+    if (lastDroppedItem && !addedCourses.includes(lastDroppedItem.name)) {
+      setAddedCourses((prevCourses) => [...prevCourses, lastDroppedItem.name]);
+      usedCourses[lastDroppedItem.name] = true; // Mark the course as used
     }
-  }, [lastDroppedItem, prevLastDroppedItem]);
+  }, [lastDroppedItem, addedCourses]);
 
   return (
-    <div ref={drop} style={{ ...style, backgroundColor }} data-testid="Semester">
-      {isActive ? 'Release to drop' : `${accept[0]}`}
-      {console.log(array)}
-      {array.map((item, index) => (
-        <p key={index}>{item}</p>
+    <div
+      ref={drop}
+      style={{ ...style, backgroundColor }}
+      data-testid="Semester"
+    >
+      {isActive ? "Release to drop" : `${accept[0]}`}
+      {addedCourses.map((course, index) => (
+        <p key={index}>{course}</p>
       ))}
+      {console.log("Courses added", addedCourses, semesterId)}
     </div>
   );
 });
